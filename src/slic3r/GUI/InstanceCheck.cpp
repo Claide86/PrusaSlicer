@@ -63,7 +63,6 @@ namespace instance_check_internal
 		std::wstring name_to_find = L"PrusaSlicer-" + l_version_wstring;
 		if (wndTextString.find(L"PrusaSlicer") != std::wstring::npos && classNameString == L"wxWindowNR") {
 			l_prusa_slicer_hwnd = hwnd;
-			EnumProps(hwnd, Propenumproc);
 			ShowWindow(hwnd, SW_SHOWMAXIMIZED);
 			SetForegroundWindow(hwnd);
 			return false;
@@ -73,7 +72,7 @@ namespace instance_check_internal
 	static bool send_message(const std::string& message, const std::string &version)
 	{
 		l_version_wstring = boost::nowide::widen(version);
-		if (!instance_check_internal::get_lock(version) && !EnumWindows(EnumWindowsProc, /*version*/)) {
+		if (!EnumWindows(EnumWindowsProc, 0)) {
 			std::wstring wstr = boost::nowide::widen(message);
 			//LPWSTR command_line_args = wstr.c_str();//GetCommandLine();
 			LPWSTR command_line_args = new wchar_t[wstr.size() + 1];
