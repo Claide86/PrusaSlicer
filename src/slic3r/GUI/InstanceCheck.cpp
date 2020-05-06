@@ -53,9 +53,9 @@ namespace instance_check_internal
 		//checks for other instances of prusaslicer, if found brings it to front and return false to stop enumeration and quit this instance
 		//search is done by classname(wxWindowNR is wxwidgets thing, so probably not unique) and name in window upper panel
 		//other option would be do a mutex and check for its existence
-		BOOST_LOG_TRIVIAL(error) << "ewp: version: " << l_version_wstring;
-		TCHAR wndText[1000];
-		TCHAR className[1000];
+		//BOOST_LOG_TRIVIAL(error) << "ewp: version: " << l_version_wstring;
+		TCHAR 		 wndText[1000];
+		TCHAR 		 className[1000];
 		GetClassName(hwnd, className, 1000);
 		GetWindowText(hwnd, wndText, 1000);
 		std::wstring classNameString(className);
@@ -119,9 +119,10 @@ namespace instance_check_internal
 
 	static bool send_message(const std::string &message_text, const std::string &version)
 	{
-		std::string v(version);
-		std::replace(v.begin(), v.end(), '.', '-');
-		if (!instance_check_internal::get_lock(v)) {
+		//std::string v(version);
+		//std::replace(v.begin(), v.end(), '.', '-');
+		//if (!instance_check_internal::get_lock(v)) 
+		{
 			send_message_mac(message_text);
 			return true;
 		}
@@ -132,9 +133,11 @@ namespace instance_check_internal
 
 	static bool  send_message(const std::string &message_text, const std::string &version)
 	{
-		std::string v(version);
+		/*std::string v(version);
 		std::replace(v.begin(), v.end(), '.', '-');
-		if (!instance_check_internal::get_lock(v))
+		if (!instance_check_internal::get_lock(v))*/
+		/*auto checker = new wxSingleInstanceChecker;
+		if ( !checker->IsAnotherRunning() ) */
 		{
 			DBusMessage* msg;
 			DBusMessageIter args;
@@ -207,12 +210,22 @@ namespace instance_check_internal
 
 bool instance_check(int argc, char** argv, bool app_config_single_instance,const std::string version)
 {
-	
+	//std::string lockfile_path(version);
+	//std::replace(lockfile_path.begin(), lockfile_path.end(), '.', '-');
+	std::string full_path = boost::filesystem::system_complete(argv[0]).string();
+	full_path.erase(std::remove_if(full_path.begin(), full_path.end(), isspace), full_path.end());
+	boost::erase_all(full_path, "/");
+	boost::erase_all(full_path, ".");
+	//full_path.erase(std::remove_if(full_path.begin(), full_path.end(), '/'), full_path.end());
+	//full_path.erase(std::remove_if(full_path.begin(), full_path.end(), '.'), full_path.end());
+	//BOOST_LOG_TRIVIAL(debug) <<"full path: "<< full_path;
+	full_path += ".lock";
+	GUI::wxGetApp().init_single_instance_checker(full_path, data_dir() + "/cache/");
 	instance_check_internal::CommandLineAnalysis cla = instance_check_internal::process_command_line(argc, argv);
-	if (cla.should_send || app_config_single_instance)
-		if (instance_check_internal::send_message(cla.cl_string, version)) {
-			BOOST_LOG_TRIVIAL(info) << "instance check: Another instance found. This instance will terminate.";
-			return true;
+	if ((cla.should_send || app_config_single_instance) && GUI::wxGetApp().single_instance_checker()->IsAnotherRunning()) {
+		instance_check_internal::send_message(cla.cl_string, version);
+		BOOST_LOG_TRIVIAL(info) << "instance check: Another instance found. This instance will terminate.";
+		return true;
 		}
 	BOOST_LOG_TRIVIAL(info) << "instance check: Another instance not found or single-instance not set.";
 	return false;
@@ -278,8 +291,6 @@ namespace MessageHandlerInternal
 	static boost::filesystem::path get_path(std::string possible_path)
 	{
 		BOOST_LOG_TRIVIAL(debug) << "message part:" << possible_path;
-
-		//possible_path.erase(std::remove_if(possible_path.begin(), possible_path.end(), isspace), possible_path.end());
 
 		if (possible_path.empty() || possible_path.size() < 3) {
 			BOOST_LOG_TRIVIAL(debug) << "empty";

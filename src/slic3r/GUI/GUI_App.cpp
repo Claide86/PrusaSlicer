@@ -324,6 +324,13 @@ void GUI_App::init_app_config()
 		app_config->load();
 	}
 }
+
+void GUI_App::init_single_instance_checker(const std::string &name, const std::string &path)
+{
+    BOOST_LOG_TRIVIAL(debug) << "init wx instance checker " << name << " "<< path; 
+    m_single_instance_checker = std::make_unique<wxSingleInstanceChecker>(boost::nowide::widen(name), boost::nowide::widen(path));
+}
+
 bool GUI_App::OnInit()
 {
     try {
