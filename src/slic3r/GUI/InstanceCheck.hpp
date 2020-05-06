@@ -22,7 +22,7 @@ namespace Slic3r {
 // checks for other running instances and sends them argv,
 // if there is --single-instance argument or AppConfig is set to single_instance=1
 // returns true if this instance should terminate
-bool    instance_check(int argc, char** argv, bool app_config_single_instance, std::string version);
+bool    instance_check(int argc, char** argv, bool app_config_single_instance,const std::string version);
 
 #if __APPLE__
 // apple implementation of inner functions of instance_check
