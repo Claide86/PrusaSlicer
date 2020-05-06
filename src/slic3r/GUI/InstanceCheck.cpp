@@ -46,24 +46,14 @@ namespace instance_check_internal
 
 #if _WIN32
 
-	//PROPENUMPROC Propenumproc;
-
-	BOOL Propenumproc(
-		HWND Arg1,
-		LPCSTR Arg2,
-		HANDLE Arg3
-	)
-	{
-		BOOST_LOG_TRIVIAL(error) << "propenum: " << Arg1;
-		return true;
-	}
-
 	static HWND l_prusa_slicer_hwnd;
 	static BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
 	{
 		//checks for other instances of prusaslicer, if found brings it to front and return false to stop enumeration and quit this instance
 		//search is done by classname(wxWindowNR is wxwidgets thing, so probably not unique) and name in window upper panel
 		//other option would be do a mutex and check for its existence
+		std::string version(static_cast<const char*>(lParam));
+		BOOST_LOG_TRIVIAL(error) << "ewp: version: " << version;
 		TCHAR wndText[1000];
 		TCHAR className[1000];
 		GetClassName(hwnd, className, 1000);
@@ -81,7 +71,7 @@ namespace instance_check_internal
 	}
 	static bool send_message(const std::string& message, const std::string &version)
 	{
-		if (!instance_check_internal::get_lock(version) && !EnumWindows(EnumWindowsProc, 0)) {
+		if (!instance_check_internal::get_lock(version) && !EnumWindows(EnumWindowsProc, version)) {
 			std::wstring wstr = boost::nowide::widen(message);
 			//LPWSTR command_line_args = wstr.c_str();//GetCommandLine();
 			LPWSTR command_line_args = new wchar_t[wstr.size() + 1];
@@ -128,7 +118,9 @@ namespace instance_check_internal
 
 	static bool send_message(const std::string &message_text, const std::string &version)
 	{
-		if (!instance_check_internal::get_lock(version)) {
+		std::string v(version);
+		std::replace(v.begin(), v.end(), '.', '-');
+		if (!instance_check_internal::get_lock(v)) {
 			send_message_mac(message_text);
 			return true;
 		}
@@ -139,7 +131,9 @@ namespace instance_check_internal
 
 	static bool  send_message(const std::string &message_text, const std::string &version)
 	{
-		if (!instance_check_internal::get_lock(version))
+		std::string v(version);
+		std::replace(v.begin(), v.end(), '.', '-');
+		if (!instance_check_internal::get_lock(v))
 		{
 			DBusMessage* msg;
 			DBusMessageIter args;
@@ -210,9 +204,9 @@ namespace instance_check_internal
 #endif //__APPLE__/__linux__
 } //namespace instance_check_internal
 
-bool instance_check(int argc, char** argv, bool app_config_single_instance, std::string version)
+bool instance_check(int argc, char** argv, bool app_config_single_instance,const std::string version)
 {
-	std::replace( version.begin(), version.end(), '.', '-');
+	
 	instance_check_internal::CommandLineAnalysis cla = instance_check_internal::process_command_line(argc, argv);
 	if (cla.should_send || app_config_single_instance)
 		if (instance_check_internal::send_message(cla.cl_string, version)) {
