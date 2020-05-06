@@ -47,13 +47,13 @@ namespace instance_check_internal
 #if _WIN32
 
 	static HWND l_prusa_slicer_hwnd;
+	static std::string l_version_string;
 	static BOOL CALLBACK EnumWindowsProc(_In_ HWND   hwnd, _In_ LPARAM lParam)
 	{
 		//checks for other instances of prusaslicer, if found brings it to front and return false to stop enumeration and quit this instance
 		//search is done by classname(wxWindowNR is wxwidgets thing, so probably not unique) and name in window upper panel
 		//other option would be do a mutex and check for its existence
-		std::string version(static_cast<const char*>(lParam));
-		BOOST_LOG_TRIVIAL(error) << "ewp: version: " << version;
+		BOOST_LOG_TRIVIAL(error) << "ewp: version: " << l_version_string;
 		TCHAR wndText[1000];
 		TCHAR className[1000];
 		GetClassName(hwnd, className, 1000);
@@ -71,7 +71,8 @@ namespace instance_check_internal
 	}
 	static bool send_message(const std::string& message, const std::string &version)
 	{
-		if (!instance_check_internal::get_lock(version) && !EnumWindows(EnumWindowsProc, version)) {
+		l_version_string = version;
+		if (!instance_check_internal::get_lock(version) && !EnumWindows(EnumWindowsProc, /*version*/)) {
 			std::wstring wstr = boost::nowide::widen(message);
 			//LPWSTR command_line_args = wstr.c_str();//GetCommandLine();
 			LPWSTR command_line_args = new wchar_t[wstr.size() + 1];
