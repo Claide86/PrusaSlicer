@@ -13,7 +13,7 @@
 {
 	//NSLog(@"adding observer");
 	//NSString *nsver = @"OtherPrusaSlicerInstanceMessage" + version_hash;
-	NSString *nsver = [NSString stringWithFormat: @"%@%@", @"OtherPrusaSlicerInstanceMessage", version_hash.text];
+	NSString *nsver = [NSString stringWithFormat: @"%@%@", @"OtherPrusaSlicerInstanceMessage", version_hash];
 	[[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(message_update:) name:nsver object:nil suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
 }
 
@@ -43,7 +43,7 @@ void send_message_mac(const std::string &msg, const std::string &version)
 	NSString *nsmsg = [NSString stringWithCString:msg.c_str() encoding:[NSString defaultCStringEncoding]];
 	//NSString *nsver = @"OtherPrusaSlicerInstanceMessage" + [NSString stringWithCString:version.c_str() encoding:[NSString defaultCStringEncoding]];
 	NSString *nsver = [NSString stringWithCString:version.c_str() encoding:[NSString defaultCStringEncoding]];
-	NSString *notifname = [NSString stringWithFormat: @"%@%@", @"OtherPrusaSlicerInstanceMessage", nsver.text];
+	NSString *notifname = [NSString stringWithFormat: @"%@%@", @"OtherPrusaSlicerInstanceMessage", nsver];
 	[[NSDistributedNotificationCenter defaultCenter] postNotificationName:nsver object:nil userInfo:[NSDictionary dictionaryWithObject:nsmsg forKey:@"data"] deliverImmediately:YES];
 }
 
