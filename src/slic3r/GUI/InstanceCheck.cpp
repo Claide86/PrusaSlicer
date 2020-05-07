@@ -7,7 +7,7 @@
 #include "boost/nowide/convert.hpp"
 #include <boost/log/trivial.hpp>
 #include <iostream>
-
+#include <unordered_map>
 #include <fcntl.h>
 #include <errno.h>
 
@@ -145,9 +145,11 @@ namespace instance_check_internal
 			DBusError 		err;
 			dbus_uint32_t 	serial = 0;
 			const char* sigval = message_text.c_str();
-			std::string		interface_name = "com.prusa3d.prusaslicer.InstanceCheck";
+			//std::string		interface_name = "com.prusa3d.prusaslicer.InstanceCheck";
+			std::string		interface_name = "com.prusa3d.prusaslicer.InstanceCheck.Object" + version;
 			std::string   	method_name = "AnotherInstace";
-			std::string		object_name = "/com/prusa3d/prusaslicer/InstanceCheck";
+			//std::string		object_name = "/com/prusa3d/prusaslicer/InstanceCheck";
+			std::string		object_name = "/com/prusa3d/prusaslicer/InstanceCheck/Object" + version;
 
 
 			// initialise the error value
@@ -212,21 +214,24 @@ bool instance_check(int argc, char** argv, bool app_config_single_instance,const
 {
 	//std::string lockfile_path(version);
 	//std::replace(lockfile_path.begin(), lockfile_path.end(), '.', '-');
-	std::string full_path = boost::filesystem::system_complete(argv[0]).string();
-	full_path.erase(std::remove_if(full_path.begin(), full_path.end(), isspace), full_path.end());
-	boost::erase_all(full_path, "/");
-	boost::erase_all(full_path, ".");
+	//std::string full_path = boost::filesystem::system_complete(argv[0]).string();
+	//full_path.erase(std::remove_if(full_path.begin(), full_path.end(), isspace), full_path.end());
+	//boost::erase_all(full_path, "/");
+	//boost::erase_all(full_path, ".");
 	//full_path.erase(std::remove_if(full_path.begin(), full_path.end(), '/'), full_path.end());
 	//full_path.erase(std::remove_if(full_path.begin(), full_path.end(), '.'), full_path.end());
-	//BOOST_LOG_TRIVIAL(debug) <<"full path: "<< full_path;
-	full_path += ".lock";
-	GUI::wxGetApp().init_single_instance_checker(full_path, data_dir() + "/cache/");
+
+	std::size_t hashed_path = std::hash<std::string>{}(boost::filesystem::system_complete(argv[0]).string());
+	std::string lock_name 	= std::to_string(hashed_path);
+	BOOST_LOG_TRIVIAL(debug) <<"full path: "<< lock_name;
+	GUI::wxGetApp().init_single_instance_checker(lock_name + ".lock", data_dir() + "/cache/");
 	instance_check_internal::CommandLineAnalysis cla = instance_check_internal::process_command_line(argc, argv);
 	if ((cla.should_send || app_config_single_instance) && GUI::wxGetApp().single_instance_checker()->IsAnotherRunning()) {
-		instance_check_internal::send_message(cla.cl_string, version);
+		instance_check_internal::send_message(cla.cl_string, lock_name);
 		BOOST_LOG_TRIVIAL(info) << "instance check: Another instance found. This instance will terminate.";
 		return true;
-		}
+	}
+	GUI::wxGetApp().set_instance_hash(lock_name);
 	BOOST_LOG_TRIVIAL(info) << "instance check: Another instance not found or single-instance not set.";
 	return false;
 }
@@ -399,13 +404,12 @@ namespace MessageHandlerDBusInternal
 	{
 		const char* interface_name = dbus_message_get_interface(message);
 	    const char* member_name    = dbus_message_get_member(message);
-
+	    std::string our_interface  = "com.prusa3d.prusaslicer.InstanceCheck.Object" + wxGetApp().get_instance_hash();
 	    BOOST_LOG_TRIVIAL(trace) << "DBus message received: interface: " << interface_name << ", member: " << member_name;
-
 	    if (0 == strcmp("org.freedesktop.DBus.Introspectable", interface_name) && 0 == strcmp("Introspect", member_name)) {		
 	        respond_to_introspect(connection, message);
 	        return DBUS_HANDLER_RESULT_HANDLED;
-	    } else if (0 == strcmp("com.prusa3d.prusaslicer.InstanceCheck", interface_name) && 0 == strcmp("AnotherInstace", member_name)) {
+	    } else if (0 == strcmp(our_interface.c_str(), interface_name) && 0 == strcmp("AnotherInstace", member_name)) {
 	        handle_method_another_instance(connection, message);
 	        return DBUS_HANDLER_RESULT_HANDLED;
 	    } 
@@ -419,9 +423,11 @@ void OtherInstanceMessageHandler::listen()
     DBusError 			 err;
     int 				 name_req_val;
     DBusObjectPathVTable vtable;
-	std::string			 interface_name = "com.prusa3d.prusaslicer.InstanceCheck";
-    std::string			 object_name 	= "/com/prusa3d/prusaslicer/InstanceCheck";
+    std::string 		 instance_hash  = wxGetApp().get_instance_hash();
+	std::string			 interface_name = "com.prusa3d.prusaslicer.InstanceCheck.Object" + instance_hash;
+    std::string			 object_name 	= "/com/prusa3d/prusaslicer/InstanceCheck/Object" + instance_hash;
 
+    //BOOST_LOG_TRIVIAL(debug) << "init dbus listen " << interface_name << " " << object_name;
     dbus_error_init(&err);
 
     // connect to the bus and check for errors (use SESSION bus everywhere!)
@@ -467,7 +473,7 @@ void OtherInstanceMessageHandler::listen()
 		return;
 	}
 
-	BOOST_LOG_TRIVIAL(trace) << "Dbus object registered. Starting listening for messages.";
+	BOOST_LOG_TRIVIAL(trace) << "Dbus object "<< object_name <<" registered. Starting listening for messages.";
 
 	for (;;) {
 		// Wait for 1 second 
