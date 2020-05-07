@@ -80,7 +80,7 @@ private:
 
 #if __APPLE__
 	//implemented at InstanceCheckMac.mm
-	void    register_for_messages();
+	void    register_for_messages(const std::string &version_hash);
 	void    unregister_for_messages();
 	// Opaque pointer to RemovableDriveManagerMM
 	void* m_impl_osx;

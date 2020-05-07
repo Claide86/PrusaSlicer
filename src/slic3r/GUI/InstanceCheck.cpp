@@ -256,7 +256,7 @@ void OtherInstanceMessageHandler::init(wxEvtHandler* callback_evt_handler)
 #endif  //_WIN32
 
 #if defined(__APPLE__)
-	this->register_for_messages();
+	this->register_for_messages(wxGetApp().get_instance_hash());
 #endif //__APPLE__
 
 #ifdef BACKGROUND_MESSAGE_LISTENER

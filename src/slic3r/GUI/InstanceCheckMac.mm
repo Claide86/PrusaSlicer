@@ -44,7 +44,7 @@ void send_message_mac(const std::string &msg, const std::string &version)
 	//NSString *nsver = @"OtherPrusaSlicerInstanceMessage" + [NSString stringWithCString:version.c_str() encoding:[NSString defaultCStringEncoding]];
 	NSString *nsver = [NSString stringWithCString:version.c_str() encoding:[NSString defaultCStringEncoding]];
 	NSString *notifname = [NSString stringWithFormat: @"%@%@", @"OtherPrusaSlicerInstanceMessage", nsver];
-	[[NSDistributedNotificationCenter defaultCenter] postNotificationName:nsver object:nil userInfo:[NSDictionary dictionaryWithObject:nsmsg forKey:@"data"] deliverImmediately:YES];
+	[[NSDistributedNotificationCenter defaultCenter] postNotificationName:notifname object:nil userInfo:[NSDictionary dictionaryWithObject:nsmsg forKey:@"data"] deliverImmediately:YES];
 }
 
 namespace GUI {
@@ -64,7 +64,7 @@ void OtherInstanceMessageHandler::unregister_for_messages()
         [m_impl_osx release];
         m_impl_osx = nullptr;
     } else {
-		NSLog(@"unreegister not required");
+		NSLog(@"warning: unregister instance InstanceCheck notifications not required");
 	}
 }
 }//namespace GUI
