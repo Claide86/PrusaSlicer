@@ -9,10 +9,11 @@
 	self = [super init];
 	return self;
 }
--(void)add_observer
+-(void)add_observer:(NSString *)version_hash
 {
 	//NSLog(@"adding observer");
-	[[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(message_update:) name:@"OtherPrusaSlicerInstanceMessage" object:nil suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
+	NSString *nsver = @"OtherPrusaSlicerInstanceMessage" + version_hash
+	[[NSDistributedNotificationCenter defaultCenter] addObserver:self selector:@selector(message_update:) name:nsver object:nil suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
 }
 
 -(void)message_update:(NSNotification *)msg
@@ -36,19 +37,21 @@
 
 namespace Slic3r {
 
-void send_message_mac(const std::string &msg)
+void send_message_mac(const std::string &msg, const std::string &version)
 {
 	NSString *nsmsg = [NSString stringWithCString:msg.c_str() encoding:[NSString defaultCStringEncoding]];
+	NSString *nsver = @"OtherPrusaSlicerInstanceMessage" + [NSString stringWithCString:version.c_str() encoding:[NSString defaultCStringEncoding]];
 	//NSLog(@"sending msg %@", nsmsg);
-	[[NSDistributedNotificationCenter defaultCenter] postNotificationName:@"OtherPrusaSlicerInstanceMessage" object:nil userInfo:[NSDictionary dictionaryWithObject:nsmsg forKey:@"data"] deliverImmediately:YES];
+	[[NSDistributedNotificationCenter defaultCenter] postNotificationName:nsver object:nil userInfo:[NSDictionary dictionaryWithObject:nsmsg forKey:@"data"] deliverImmediately:YES];
 }
 
 namespace GUI {
-void OtherInstanceMessageHandler::register_for_messages()
+void OtherInstanceMessageHandler::register_for_messages(const std::string &version_hash)
 {
 	m_impl_osx = [[OtherInstanceMessageHandlerMac alloc] init];
 	if(m_impl_osx) {
-		[m_impl_osx add_observer];
+		NSString *nsver = [NSString stringWithCString:version_hash.c_str() encoding:[NSString defaultCStringEncoding]];
+		[m_impl_osx add_observer:nsver];
 	}
 }
 

@@ -123,7 +123,7 @@ namespace instance_check_internal
 		//std::replace(v.begin(), v.end(), '.', '-');
 		//if (!instance_check_internal::get_lock(v)) 
 		{
-			send_message_mac(message_text);
+			send_message_mac(message_text, version);
 			return true;
 		}
 		return false;

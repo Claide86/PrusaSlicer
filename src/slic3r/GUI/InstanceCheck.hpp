@@ -27,7 +27,7 @@ bool    instance_check(int argc, char** argv, bool app_config_single_instance,co
 #if __APPLE__
 // apple implementation of inner functions of instance_check
 // in InstanceCheckMac.mm
-void    send_message_mac(const std::string& msg);
+void    send_message_mac(const std::string& msg, const std::string& version);
 #endif //__APPLE__
 
 namespace GUI {
